@@ -1,0 +1,35 @@
+pretext: Triggered via {{eventName}} by {{actor}} on <{{repositoryUrl}}|{{repositoryName}}>
+
+text: |
+  {{#if payload.commits}}
+  *Commits*
+  {{#each payload.commits}}
+  <{{this.url}}|`{{truncate this.id 8}}`> - {{this.message}}
+  {{/each}}
+  {{/if}}
+
+
+fields:
+  - title: Git Ref
+    value: "{{ref}} ({{refType}})"
+    short: true
+  - title: Job Status {{icon jobStatus}}
+    value: "{{jobStatus}}"
+    short: true
+
+
+footer: >-
+  <{{repositoryUrl}}|{{repositoryName}}> {{workflow}} #{{runNumber}}
+
+colors:
+  success: 'good'
+  failure: 'danger'
+  cancelled: 'warning'
+  default: '#7D3C98'
+
+icons:
+  success: ':white_check_mark:'
+  failure: ':grimacing:'
+  cancelled: ':x:'
+  skipped: ':heavy_minus_sign:'
+  default: ':interrobang:'

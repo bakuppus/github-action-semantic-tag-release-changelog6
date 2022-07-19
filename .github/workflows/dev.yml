@@ -1,0 +1,49 @@
+name: Deploy to dev
+
+on:
+  push:
+    branches:
+      - develop
+
+
+env:
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: "npm install"
+        run: |
+          echo "npm install"
+          npm install
+
+      - name: "npm build"
+        run: |
+          echo "npm build"
+          npm run compile
+          npm run dist
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          config: .github/slack.yml
+
+          channel: '#cicd'
+        if: always()
+

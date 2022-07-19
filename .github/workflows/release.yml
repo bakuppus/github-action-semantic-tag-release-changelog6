@@ -1,0 +1,76 @@
+name: Release & Deploy to stg
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+env:
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+permissions: write-all
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    if: github.event.base_ref == 'refs/heads/release'
+    strategy:
+      matrix:
+        node-version: [14.x]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+
+
+
+      - name: "npm install"
+        run: |
+          echo "npm install"
+          npm install
+
+      - name: "npm build"
+        run: |
+          echo "npm build"
+          npm run compile
+          npm run dist
+
+
+      - name: Build changelog
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@main
+        with:
+          configuration: '.github/release-changelog-builder-config.json'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          body: ${{steps.build_changelog.outputs.changelog}}
+          draft: false
+          prerelease: false
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          config: .github/slack.yml
+          channel: '#cicd'
+        if: always()
+
+
+
+
